@@ -1,11 +1,11 @@
-var forlstats = require('../index.js'),
+var filetrek = require('../index.js'),
     fs = require('fs');
 
-var files = fs.readdirSync('./');
-
-forlstats(files, function(stats, index, arr){
-    console.log(stats);
-})
-.then(function(info){
-    console.log(info);
+var p = filetrek('./', function(name, stats, root){
+    console.log('name = ',name);
+    console.log('stats.isFile() = ', stats.isFile());
 });
+
+p.then(function(all){
+    console.log(all[0]);
+}, function(e){ console.log(e); });

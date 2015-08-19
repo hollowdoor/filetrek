@@ -1,58 +1,88 @@
 require("setimmediate");
 var Promise = require('es6-promise').Promise,
-    fs = require('fs');
+    fs = require('fs'),
+    Matcher = require('multimatcher'),
+    path = require('path'),
+    cwd = process.cwd();
 
 /*
-git remote add origin https://github.com/hollowdoor/fsforlstats.git
+git remote add origin https://github.com/hollowdoor/filetrek.git
 git push -u origin master
 npm publish
 */
 
-module.exports = function(names, on_next){
 
-    var blockError = false;
+module.exports = function(folder, options, cb){
 
-    if(typeof on_next !== 'function')
-        blockError = new TypeError('forstats Error: Second argument must be a function.');
+    cb = cb || null;
 
-    if(Object.prototype.toString.call(names) !== '[object Array]')
-        blockError = new TypeError('forstats Error: First argument must be an array.');
+    if(typeof options === 'function'){
+        cb = options;
+        options = {};
+    }
+
+    var ignore = null,
+        find = null;
+
+
+    if(Object.prototype.toString.call(options.ignore) === '[object Array]')
+        ignore = new Matcher(options.ignore);
+
+    if(Object.prototype.toString.call(options.find) === '[object Array]')
+        find = new Matcher(options.find);
 
 
     return new Promise(function(resolve, reject){
-        var index = 0,
-            info = [],
-            list;
 
-        if(blockError)
-            return reject(blockError);
+        var info = [],
+            base = path.resolve(folder);
 
-        if(!names.length)
-            return resolve([]);
 
-        list = names.concat([]);
+        fs.readdir(folder, function(err, files){
 
-        stat(list[index]);
+            var running = files.length;
 
-        function stat(name){
+            if(find)
+                files = find.find(files);
 
-            fs.lstat(name, function(err, stats){
 
-                if(err)
-                    return reject(new Error('forstats Error: '+err.message));
+            if(err)
+                return reject(new Error('filetrek error: '+err.message));
 
-                on_next(stats, index, list);
+            var stat = function(name){
 
-                info.push({
-                    name: name,
-                    stats: stats
+                var fullname = path.resolve(base, name);
+
+                if(ignore && ignore.test(fullname)){
+                    if(!--running)
+                        resolve(info);
+                }
+
+                fs.lstat(fullname, function(err, stats){
+
+                    if(err)
+                        return reject(new Error('filetrek error: '+err.message));
+
+                    if(cb)
+                        cb(name, stats, base);
+
+                    info.push({
+                        base: base,
+                        name: name,
+                        stats: stats
+                    });
+
+                    if(!--running)
+                        return resolve(info);
+
                 });
+            };
 
-                if(++index === names.length)
-                    return resolve(info);
+            for(var i=0; i<files.length; i++){
+                stat(files[i]);
+            }
+        });
 
-                stat(list[index]);
-            });
-        }
+
     });
-}
+};
