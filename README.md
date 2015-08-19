@@ -1,32 +1,30 @@
-fsforlstats
-===========
+filetrek
+========
 
 install
 -------
 
-npm install fsforlstats
+npm install filetrek
 
 Usage
 -----
 
 ```javascript
-var forlstats = require("fsforlstats");
+var filetrek = require("filetrek");
 
-var prom = forlstats(['fileone', 'filetwo'], function(stats, index, filenames){
-    //do something
+var p = filetrek('./', function(name, stats, root){
+    //do stuff
 });
 
-prom.then(function(statsArray){
-    console.log(statsArray.name); //The file name
-    console.log(statsArray.stats); //The files stats
+p.then(function(info){
+    //info is an Array
+    //info = [{name: "filename", stats: object, root: "root directory"}]
 });
 ```
 
 About
 -----
 
-fsforlstats gets the stats for an array of file names in parallel.
+Walk directory contents.
 
-A promise is returned from fsforlstats.
-
-When all the stats are acquired the promise resolves.
+filetrek returns a promise. After all files are walked the promise resolves.
