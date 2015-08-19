@@ -1,6 +1,6 @@
 {
   "name": "filetrek",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Read stats in parallel",
   "main": "index.js",
   "directories": {
