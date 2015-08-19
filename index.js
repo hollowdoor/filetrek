@@ -2,6 +2,12 @@ require("setimmediate");
 var Promise = require('es6-promise').Promise,
     fs = require('fs');
 
+/*
+git remote add origin https://github.com/hollowdoor/fsforlstats.git
+git push -u origin master
+npm publish
+*/
+
 module.exports = function(names, on_next){
 
     var blockError = false;
