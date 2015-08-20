@@ -40,7 +40,8 @@ module.exports = function(folder, options, cb){
 
         fs.readdir(folder, function(err, files){
 
-            var running = files.length;
+            var cancel = false,
+                running = files.length;
 
             if(find)
                 files = find.find(files);
@@ -55,13 +56,19 @@ module.exports = function(folder, options, cb){
 
                 if(ignore && ignore.test(fullname)){
                     if(!--running)
-                        resolve(info);
+                        return resolve(info);
+                    return;
                 }
 
                 fs.lstat(fullname, function(err, stats){
 
-                    if(err)
+                    if(cancel)
+                        return;
+
+                    if(err){
+                        cancel = true;
                         return reject(new Error('filetrek error: '+err.message));
+                    }
 
                     if(cb)
                         cb(name, stats, base);
