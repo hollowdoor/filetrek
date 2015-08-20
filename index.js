@@ -1,6 +1,6 @@
 require("setimmediate");
 var Promise = require('es6-promise').Promise,
-    fs = require('fs'),
+    fs = require('graceful-fs'),
     Matcher = require('multimatcher'),
     path = require('path'),
     cwd = process.cwd();
