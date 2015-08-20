@@ -7,5 +7,5 @@ var p = filetrek('./', function(name, stats, root){
 });
 
 p.then(function(all){
-    console.log(all[0]);
+    console.log(all);
 }, function(e){ console.log(e); });

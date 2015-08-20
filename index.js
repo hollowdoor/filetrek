@@ -41,11 +41,10 @@ module.exports = function(folder, options, cb){
         fs.readdir(folder, function(err, files){
 
             var cancel = false,
-                running = files.length;
+                index = 0;
 
             if(find)
                 files = find.find(files);
-
 
             if(err)
                 return reject(new Error('filetrek error: '+err.message));
@@ -55,7 +54,7 @@ module.exports = function(folder, options, cb){
                 var fullname = path.resolve(base, name);
 
                 if(ignore && ignore.test(fullname)){
-                    if(!--running)
+                    if(++index === files.length)
                         return resolve(info);
                     return;
                 }
@@ -79,15 +78,17 @@ module.exports = function(folder, options, cb){
                         stats: stats
                     });
 
-                    if(!--running)
+
+                    if(++index === files.length)
                         return resolve(info);
+
+                    stat(files[index]);
 
                 });
             };
 
-            for(var i=0; i<files.length; i++){
-                stat(files[i]);
-            }
+            stat(files[index]);
+
         });
 
 

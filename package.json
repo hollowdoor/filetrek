@@ -1,7 +1,7 @@
 {
   "name": "filetrek",
-  "version": "0.0.4",
-  "description": "Read stats in parallel",
+  "version": "0.0.6",
+  "description": "Walk files asynchronously",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -13,8 +13,20 @@
       "graceful-fs": "^4.1.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cd test && node run.js"
   },
   "author": "Quentin Engles <hollowdoor99@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+      "walk",
+      "files",
+      "walker",
+      "promise",
+      "async",
+      "asynchronous"
+  ],
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/hollowdoor/filetrek.git"
+  }
 }
