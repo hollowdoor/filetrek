@@ -22,7 +22,8 @@ module.exports = function(folder, options, cb){
     }
 
     var ignore = null,
-        find = null;
+        find = null,
+        holdError = null;
 
 
     if(Object.prototype.toString.call(options.ignore) === '[object Array]')
@@ -34,63 +35,99 @@ module.exports = function(folder, options, cb){
 
     return new Promise(function(resolve, reject){
 
+        if(typeof folder !== 'string')
+            return reject(TypeError('filetrek error: First argument must be a string.'));
+
+
         var info = [],
-            base = path.resolve(folder);
+            dirs = [],
+            thenables = [];
 
+        getFiles(folder);
 
-        fs.readdir(folder, function(err, files){
+        function getFiles(folder){
 
-            var cancel = false,
-                index = 0;
+            var base = path.resolve(folder + ''),
+                s = fs.statSync(base);
 
-            if(find)
-                files = find.find(files);
+            if(!s.isDirectory())
+                return reject(new TypeError('filetrek error: '+folder+' is not a directory.'));
 
-            if(err)
-                return reject(new Error('filetrek error: '+err.message));
+            fs.readdir(base, function(err, files){
 
-            var stat = function(name){
-
-                var fullname = path.resolve(base, name);
-
-                if(ignore && ignore.test(fullname)){
-                    if(++index === files.length)
+                if(files && !files.length){
+                    if(!dirs.length)
                         return resolve(info);
-                    return;
+                    return getFiles(dirs.shift());
                 }
 
-                fs.lstat(fullname, function(err, stats){
+                var cancel = false,
+                    index = 0;
 
-                    if(cancel)
+                if(find)
+                    files = find.find(files);
+
+                if(err)
+                    return reject(new Error('filetrek error: '+err.message));
+
+                var stat = function(name){
+
+                    var fullname = path.resolve(base, name),
+                        returned;
+
+                    if(ignore && ignore.test(fullname)){
+                        if(++index >= files.length)
+                            return resolve(thenables.length ? Promise.all(thenables) : info);
                         return;
-
-                    if(err){
-                        cancel = true;
-                        return reject(new Error('filetrek error: '+err.message));
                     }
 
-                    if(cb)
-                        cb(name, stats, base);
+                    fs.lstat(fullname, function(err, stats){
 
-                    info.push({
-                        base: base,
-                        name: name,
-                        stats: stats
+                        if(cancel)
+                            return;
+
+                        if(err){
+                            cancel = true;
+                            return reject(new Error('filetrek error: '+err.message));
+                        }
+
+                        if(cb){
+                            returned = cb(name, stats, base);
+
+                            if(returned !== undefined){
+                                if(typeof returned === 'string'){
+                                    dirs.push(returned);
+
+                                }else if(Object.prototype.toString.call(returned) ===
+                                    '[object Object]' && typeof returned.then === 'function'){
+                                    thenables.push(returned);
+                                }
+                            }
+
+                        }
+
+                        info.push({
+                            base: base,
+                            name: name,
+                            stats: stats
+                        });
+
+
+                        if(++index === files.length){
+                            if(!dirs.length)
+                                return resolve(thenables.length ? Promise.all(thenables) : info);
+                            return getFiles(dirs.shift());
+                        }
+
+                        stat(files[index]);
+
                     });
+                };
 
+                stat(files[index]);
 
-                    if(++index === files.length)
-                        return resolve(info);
-
-                    stat(files[index]);
-
-                });
-            };
-
-            stat(files[index]);
-
-        });
-
+            });
+        }
 
     });
 };
