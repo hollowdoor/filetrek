@@ -1,6 +1,6 @@
 {
   "name": "filetrek",
-  "version": "0.0.7",
+  "version": "1.0.0",
   "description": "Walk files asynchronously",
   "main": "index.js",
   "directories": {

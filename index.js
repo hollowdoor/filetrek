@@ -23,7 +23,8 @@ module.exports = function(folder, options, cb){
 
     var ignore = null,
         find = null,
-        holdError = null;
+        holdError = null,
+        top = folder;
 
 
     if(Object.prototype.toString.call(options.ignore) === '[object Array]')
@@ -47,7 +48,7 @@ module.exports = function(folder, options, cb){
 
         function getFiles(folder){
 
-            var base = path.resolve(folder + ''),
+            var base = folder + '';//path.resolve(folder + ''),
                 s = fs.statSync(base);
 
             if(!s.isDirectory())
@@ -72,16 +73,32 @@ module.exports = function(folder, options, cb){
 
                 var stat = function(name){
 
-                    var fullname = path.resolve(base, name),
-                        returned;
+                    var fullname = path.join(base, name),
+                        returned,
+                        thenable = null;
 
                     if(ignore && ignore.test(fullname)){
                         if(++index >= files.length)
-                            return resolve(thenables.length ? Promise.all(thenables) : info);
+                            return resolve(info);
                         return;
                     }
 
                     fs.lstat(fullname, function(err, stats){
+
+                        var list = path.resolve(top).split(path.sep),
+                            sub = [],
+                            flist = fullname.split(path.sep);
+
+                        for(var i=flist.length - 1; i>-1; --i){
+                            if(flist[i] !== list[list.length - 1])
+                                sub.unshift(flist[i]);
+                        }
+
+                        /*if(!sub.length){
+                            sub = name;
+                        }else if (sub.length === 1){}*/
+
+                        sub = path.join.apply(null, sub);
 
                         if(cancel)
                             return;
@@ -92,15 +109,17 @@ module.exports = function(folder, options, cb){
                         }
 
                         if(cb){
-                            returned = cb(name, stats, base);
+                            returned = cb(name, stats, folder, sub);//cb(name, stats, base);
 
                             if(returned !== undefined){
+
                                 if(typeof returned === 'string'){
                                     dirs.push(returned);
 
                                 }else if(Object.prototype.toString.call(returned) ===
                                     '[object Object]' && typeof returned.then === 'function'){
-                                    thenables.push(returned);
+                                    //thenables.push(returned);
+                                    thenable = returned;
                                 }
                             }
 
@@ -112,19 +131,62 @@ module.exports = function(folder, options, cb){
                             stats: stats
                         });
 
+                        if(thenable){
+                            thenable.then(function(val){
 
+                                if(typeof val === 'string'){
+                                    fs.exists(val, function(exists){
+                                        if(!exists)
+                                            return finish();
+                                        fs.lstat(val, function(err, stats){
+                                            if(err)
+                                                return reject(err);
+                                            if(stats.isDirectory())
+                                                dirs.push(val);
+
+                                            finish();
+                                        });
+                                    });
+                                }else{
+                                    finish();
+                                }
+                            }, function(err){
+                                reject(err);
+                            });
+
+                            return;
+                        }
+
+                        finish();
+
+                        /*if(++index === files.length){
+                            if(!dirs.length)
+                                return resolve(info);
+                            return getFiles(dirs.shift());
+                        }*/
+                        /*
                         if(++index === files.length){
                             if(!dirs.length)
                                 return resolve(thenables.length ? Promise.all(thenables) : info);
                             return getFiles(dirs.shift());
-                        }
+                        }*/
 
-                        stat(files[index]);
+                        //stat(files[index]);
 
                     });
                 };
 
                 stat(files[index]);
+
+                function finish(){
+                    if(++index === files.length){
+                        if(!dirs.length)
+                            return resolve(info);
+                        return getFiles(dirs.shift());
+                    }
+
+                    stat(files[index]);
+                }
 
             });
         }

@@ -32,7 +32,7 @@ var filetrek = require("filetrek"),
         find: ["*.js", /\.xml$/, "filename.html"]
     };
 
-var p = filetrek('./', options, function(name, stats, root){
+var p = filetrek('./', options, function(name, stats, root, sub){
     //do stuff
 });
 
@@ -63,6 +63,25 @@ options.ignore
 
 Excludes matched files in the return.
 
+Callback Parameters
+-------------------
+
+### name
+
+The name of the file, or directory.
+
+### stats
+
+A stats object as returned from `fs.stats`.
+
+### root
+
+The original directory to be scanned.
+
+### sub
+
+The whole name of the file path not including the root.
+
 Recursion Recipe
 ----------------
 
@@ -72,7 +91,7 @@ var files = [],
 
 function walkFiles(folder){
 
-    return filetrek(folder, function(name, stats, root){
+    return filetrek(folder, function(name, stats, root, sub){
 
         if(stats.isDirectory()){
             //The directory path is used to continue walking files.
@@ -103,7 +122,9 @@ function walkFiles(folder){
 walkFiles('./').then(function(resultsOfAllPromiseFactoryPromises){});
 ```
 
-The promises returned like this are passed to **Promise.all**.
+~~The promises returned like this are passed to **Promise.all**.~~
+
+Promises are done in series so operation order is preserved.
 
 If there are other operations on the **file name** you want to do, and that operation returns a promise returning a promise in the callback might be what you want to do.
 
